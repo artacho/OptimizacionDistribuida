@@ -29,14 +29,18 @@ import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionLis
  * WiFi state related events.
  */
 
+/* THE DEVICE WHO CONNECTS IS THE SLAVE */
+
 public class MainActivity extends Activity implements ChannelListener, DeviceActionListener {
-    public static final String TAG = "ODO";
+    public static final String TAG = "OPTIMIZACION";
     private WifiP2pManager manager;
     private boolean isWifiP2pEnabled = false;
     private boolean retryChannel = false;
     private final IntentFilter intentFilter = new IntentFilter();
     private Channel channel;
     private BroadcastReceiver receiver = null;
+
+    private Server slaveServer = null; // PORT 8888
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
      */
@@ -143,7 +147,14 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
         manager.connect(channel, config, new ActionListener() {
             @Override
             public void onSuccess() {
-                // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                Log.d(MainActivity.TAG, "Callback successful connection");
+                Log.d(MainActivity.TAG, "I should be a slave");
+                // Create slave server and send IP to Group Owner
+                /*if (slaveServer == null) {
+                    slaveServer = new Server(8888);
+                    slaveServer.createServer();
+                    slaveServer.start();
+                }*/
             }
             @Override
             public void onFailure(int reason) {

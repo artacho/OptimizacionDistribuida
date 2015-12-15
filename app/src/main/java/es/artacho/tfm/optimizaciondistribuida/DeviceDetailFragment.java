@@ -26,7 +26,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 /**
@@ -39,6 +43,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
     private WifiP2pDevice device;
     private WifiP2pInfo info;
     ProgressDialog progressDialog = null;
+
+    Server server = null;
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -52,6 +58,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = device.deviceAddress;
                 config.wps.setup = WpsInfo.PBC;
+                config.groupOwnerIntent = 0;
                 if (progressDialog != null && progressDialog.isShowing()) {
                     progressDialog.dismiss();
                 }
@@ -81,9 +88,16 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                     public void onClick(View v) {
                         // Allow user to pick an image from Gallery or other
                         // registered apps
-                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        /*Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                         intent.setType("image/*");
-                        startActivityForResult(intent, CHOOSE_FILE_RESULT_CODE);
+                        startActivityForResult(intent, CHOOSE_FILE_RESULT_CODE);*/
+                        Log.d(MainActivity.TAG, "GO IP: " + info.groupOwnerAddress.toString());
+                        String s = info.groupOwnerAddress.toString();
+                        s = s.substring(1, s.length());
+                        Log.d(MainActivity.TAG, "GO IP: " + s);
+
+                        new ReceiveMessage(getActivity(), mContentView.findViewById(R.id.status_text))
+                                .execute(s);
                     }
                 });
         return mContentView;
@@ -123,8 +137,14 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         // server. The file server is single threaded, single connection server
         // socket.
         if (info.groupFormed && info.isGroupOwner) {
-            new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
-                    .execute();
+            if (server == null) {
+                server = new Server(8888,false);
+                server.createServer();
+                server.start();
+            }
+            //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
+                    //.execute();
+
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
@@ -240,5 +260,43 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             return false;
         }
         return true;
+    }
+
+    /**
+     * A simple socket that connects to a Server and receive some data on
+     * the stream.
+     */
+    public static class ReceiveMessage extends AsyncTask<String, Void, Void> {
+        private Context context;
+        private TextView statusText;
+        /**
+         * @param context
+         * @param statusText
+         */
+        public ReceiveMessage(Context context, View statusText) {
+            this.context = context;
+            this.statusText = (TextView) statusText;
+        }
+        @Override
+        protected Void doInBackground(String... ip) {
+            try {
+                String connectIP = ip[0];
+
+                Log.d(MainActivity.TAG, "Connecting to server socket");
+                Socket client = new Socket();
+                client.connect((new InetSocketAddress(connectIP,8888)), 8888);
+                ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
+                Message message = new Message("HOLA HOLA");
+                outputStream.writeObject(message);
+                outputStream.close();
+                client.close();
+                Log.d(MainActivity.TAG, message.toString());
+
+            } catch (IOException e) {
+                Log.e(MainActivity.TAG, e.getMessage());
+
+            }
+            return null;
+        }
     }
 }
