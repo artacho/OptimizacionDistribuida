@@ -100,8 +100,17 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                                 .execute(s);
                     }
                 });
+        mContentView.findViewById(R.id.btn_add_slave).setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d(MainActivity.TAG, "Adding new slave");
+                        Log.d(MainActivity.TAG, device.deviceAddress);
+                    }
+                });
         return mContentView;
     }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // User has picked an image. Transfer it to group owner i.e peer using
@@ -145,6 +154,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
                     //.execute();
 
+            //mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.VISIBLE);
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
@@ -167,6 +177,15 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         view.setText(device.deviceAddress);
         view = (TextView) mContentView.findViewById(R.id.device_info);
         view.setText(device.toString());
+
+        // Permite añadir al pool los dispositivos conectados
+        if (device.status == 0) {
+            mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.VISIBLE);
+        } else {
+            mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.GONE);
+        }
+
+        // si soy slave y estoy conectado permitir desconexion
     }
     /**
      * Clears the UI fields after a disconnect or direct mode disable operation.
@@ -182,6 +201,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         view = (TextView) mContentView.findViewById(R.id.status_text);
         view.setText(R.string.empty);
         mContentView.findViewById(R.id.btn_start_client).setVisibility(View.GONE);
+        mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.GONE);
         this.getView().setVisibility(View.GONE);
     }
     /**
