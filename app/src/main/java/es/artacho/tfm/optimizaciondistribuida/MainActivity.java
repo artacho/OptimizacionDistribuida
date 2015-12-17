@@ -137,7 +137,7 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
         }
     }
     @Override
-    public void showDetails(WifiP2pDevice device) {
+    public void showDetails(Device device) {
         DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()
                 .findFragmentById(R.id.frag_detail);
         fragment.showDetails(device);
