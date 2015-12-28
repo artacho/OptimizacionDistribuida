@@ -39,8 +39,9 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
     private final IntentFilter intentFilter = new IntentFilter();
     private Channel channel;
     private BroadcastReceiver receiver = null;
+    public Servidor slaveServer = null;
+    public Servidor masterServer = null;
 
-    private Server slaveServer = null; // PORT 8888
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
      */
@@ -150,11 +151,11 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
                 Log.d(MainActivity.TAG, "Callback successful connection");
                 Log.d(MainActivity.TAG, "I should be a slave");
                 // Create slave server and send IP to Group Owner
-                /*if (slaveServer == null) {
-                    slaveServer = new Server(8888);
+                if (slaveServer == null) {
+                    slaveServer = new Servidor(Constants.SERVER_SLAVE_PORT, getApplicationContext());
                     slaveServer.createServer();
                     slaveServer.start();
-                }*/
+                }
             }
             @Override
             public void onFailure(int reason) {

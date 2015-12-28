@@ -3,9 +3,6 @@ package es.artacho.tfm.optimizaciondistribuida;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -13,7 +10,6 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,17 +18,11 @@ import android.widget.TextView;
 
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
+
 /**
  * A fragment that manages a particular peer and allows interaction with device
  * i.e. setting up network connection and transferring data.
@@ -45,7 +35,6 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
     private WifiP2pInfo info;
     ProgressDialog progressDialog = null;
 
-    Server server = null;
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -97,7 +86,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         s = s.substring(1, s.length());
                         Log.d(MainActivity.TAG, "GO IP: " + s);
 
-                        new ReceiveMessage(getActivity(), mContentView.findViewById(R.id.status_text))
+                        new SendMessage(getActivity(), mContentView.findViewById(R.id.status_text))
                                 .execute(s);
                     }
                 });
@@ -140,11 +129,13 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         // server. The file server is single threaded, single connection server
         // socket.
         if (info.groupFormed && info.isGroupOwner) {
-            if (server == null) {
-                server = new Server(8888,false);
-                server.createServer();
-                server.start();
+
+            if (((MainActivity) getActivity()).masterServer == null) {
+                ((MainActivity) getActivity()).masterServer = new Servidor(Constants.SERVER_MASTER_PORT, getActivity());
+                ((MainActivity) getActivity()).masterServer.createServer();
+                ((MainActivity) getActivity()).masterServer.start();
             }
+
             //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
                     //.execute();
 
@@ -170,6 +161,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         view.setText(device.deviceAddress);
         view = (TextView) mContentView.findViewById(R.id.device_info);
         view.setText(device.toString());
+
+        Log.d(MainActivity.TAG, "IP: " + protocolDevice.getIp());
 
         // Permite añadir al pool los dispositivos conectados
         if (device.status == 0) {
@@ -202,14 +195,14 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
      * A simple socket that connects to a Server and receive some data on
      * the stream.
      */
-    public static class ReceiveMessage extends AsyncTask<String, Void, Void> {
+    public class SendMessage extends AsyncTask<String, Void, Void> {
         private Context context;
         private TextView statusText;
         /**
          * @param context
          * @param statusText
          */
-        public ReceiveMessage(Context context, View statusText) {
+        public SendMessage(Context context, View statusText) {
             this.context = context;
             this.statusText = (TextView) statusText;
         }
@@ -220,13 +213,24 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 
                 Log.d(MainActivity.TAG, "Connecting to server socket");
                 Socket client = new Socket();
-                client.connect((new InetSocketAddress(connectIP,8888)), 8888);
+                client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), 8888);
                 ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
-                Message message = new Message("HOLA HOLA");
+                Message message = new Message(client.getLocalAddress().getHostAddress().toString());
+
+                DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
+                        .findFragmentById(R.id.frag_list);
+
+                String address = null;
+
+                if (fragmentList != null) {
+                    address = fragmentList.getDevice().deviceAddress;
+                }
+
+                message.setAddress(address);
                 outputStream.writeObject(message);
                 outputStream.close();
                 client.close();
-                Log.d(MainActivity.TAG, message.toString());
+                Log.d(MainActivity.TAG, "SLAVE ADDRESS: " + address);
 
             } catch (IOException e) {
                 Log.e(MainActivity.TAG, e.getMessage());
