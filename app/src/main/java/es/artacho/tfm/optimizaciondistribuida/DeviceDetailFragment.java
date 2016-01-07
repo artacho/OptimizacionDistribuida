@@ -15,10 +15,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -86,7 +88,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         s = s.substring(1, s.length());
                         Log.d(MainActivity.TAG, "GO IP: " + s);
 
-                        new SendMessage(getActivity(), mContentView.findViewById(R.id.status_text))
+                        new SendMessage(getActivity(), Action.IP, myDevice)
                                 .execute(s);
                     }
                 });
@@ -95,14 +97,17 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                     @Override
                     public void onClick(View v) {
                         Log.d(MainActivity.TAG, "Adding new slave");
-                        myDevice.setStatus(Status.POOL);
 
-                        DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
+
+                        new SendMessage(getActivity(), Action.ADD, myDevice)
+                                .execute(myDevice.getIp());
+
+                        /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
                                 .findFragmentById(R.id.frag_list);
 
                         if (fragmentList != null) {
                             ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
-                        }
+                        }*/
 
                         Log.d(MainActivity.TAG, device.deviceAddress);
                     }
@@ -191,52 +196,5 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         this.getView().setVisibility(View.GONE);
     }
 
-    /**
-     * A simple socket that connects to a Server and receive some data on
-     * the stream.
-     */
-    public class SendMessage extends AsyncTask<String, Void, Void> {
-        private Context context;
-        private TextView statusText;
-        /**
-         * @param context
-         * @param statusText
-         */
-        public SendMessage(Context context, View statusText) {
-            this.context = context;
-            this.statusText = (TextView) statusText;
-        }
-        @Override
-        protected Void doInBackground(String... ip) {
-            try {
-                String connectIP = ip[0];
 
-                Log.d(MainActivity.TAG, "Connecting to server socket");
-                Socket client = new Socket();
-                client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), 8888);
-                ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
-                Message message = new Message(client.getLocalAddress().getHostAddress().toString());
-
-                DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
-                        .findFragmentById(R.id.frag_list);
-
-                String address = null;
-
-                if (fragmentList != null) {
-                    address = fragmentList.getDevice().deviceAddress;
-                }
-
-                message.setAddress(address);
-                outputStream.writeObject(message);
-                outputStream.close();
-                client.close();
-                Log.d(MainActivity.TAG, "SLAVE ADDRESS: " + address);
-
-            } catch (IOException e) {
-                Log.e(MainActivity.TAG, e.getMessage());
-
-            }
-            return null;
-        }
-    }
 }

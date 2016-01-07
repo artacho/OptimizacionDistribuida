@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
@@ -27,10 +28,18 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
     protected Message doInBackground(Object... objects) {
         try {
             Socket socket = (Socket) objects[0];
-
+            ObjectOutputStream outputStream;
             Log.d(MainActivity.TAG, "Connecting to server socket");
             ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
             Message message = (Message) inputStream.readObject();
+
+            if (message.getAction().equals(Action.ADD)) {
+                message.setFlag(true);
+                outputStream = new ObjectOutputStream(socket.getOutputStream());
+                outputStream.writeObject(message);
+                outputStream.close();
+            }
+
             Log.d(MainActivity.TAG, message.toString() + " 10");
 
             return message;
@@ -49,18 +58,22 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
     protected void onPostExecute(Message message) {
         Log.d(MainActivity.TAG, "Soy servidor y voy a hacer un texto");
 
-        DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
-                .findFragmentById(R.id.frag_list);
 
-        if (fragmentList != null) {
-            for (Device d: fragmentList.getDevices()) {
-                if (d.getDevice().deviceAddress.equals(message.getAddress())) {
-                    d.setIp(message.toString());
+        if (message.getAction().equals(Action.IP)) {
+            DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
+                    .findFragmentById(R.id.frag_list);
+
+            if (fragmentList != null) {
+                for (Device d : fragmentList.getDevices()) {
+                    if (d.getDevice().deviceAddress.equals(message.getAddress())) {
+                        d.setIp(message.toString());
+                        Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         }
 
-        Toast.makeText(context, message.getAddress() + " " + message.toString(), Toast.LENGTH_LONG).show();
+
 
     }
 
