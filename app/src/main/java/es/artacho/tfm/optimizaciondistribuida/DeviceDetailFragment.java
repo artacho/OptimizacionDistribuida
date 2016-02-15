@@ -24,6 +24,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A fragment that manages a particular peer and allows interaction with device
@@ -33,8 +35,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
     protected static final int CHOOSE_FILE_RESULT_CODE = 20;
     private View mContentView = null;
     private WifiP2pDevice device;
-    private Device myDevice;
-    private WifiP2pInfo info;
+    protected Device myDevice;
+    protected WifiP2pInfo info;
     ProgressDialog progressDialog = null;
 
     @Override
@@ -65,6 +67,14 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 //                        }
                 );
                 ((DeviceActionListener) getActivity()).connect(config);
+
+                /*if (myDevice != null && info != null) {
+                    new Protocol(getActivity(), Action.CONNECT, myDevice).execute(info.groupOwnerAddress.toString().substring(1,info.groupOwnerAddress.toString().length()));
+                } else {
+                    Log.d(MainActivity.TAG, "NULOOO");
+                }*/
+
+
             }
         });
         mContentView.findViewById(R.id.btn_disconnect).setOnClickListener(
@@ -88,19 +98,18 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         s = s.substring(1, s.length());
                         Log.d(MainActivity.TAG, "GO IP: " + s);
 
-                        new SendMessage(getActivity(), Action.IP, myDevice)
-                                .execute(s);
+                        /*new SendMessage(getActivity(), Action.IP, myDevice)
+                                .execute(s);*/
                     }
                 });
         mContentView.findViewById(R.id.btn_add_slave).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Log.d(MainActivity.TAG, "Adding new slave");
 
-
-                        new SendMessage(getActivity(), Action.ADD, myDevice)
-                                .execute(myDevice.getIp());
+                        new Protocol(getActivity(), Action.ADD, myDevice, null, 0, null).execute(myDevice.getIp());
+                        //new SendMessage(getActivity(), Action.ADD, myDevice)
+                                //.execute(myDevice.getIp());
 
                         /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
                                 .findFragmentById(R.id.frag_list);
@@ -112,8 +121,30 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         Log.d(MainActivity.TAG, device.deviceAddress);
                     }
                 });
+        mContentView.findViewById(R.id.btn_exec).setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d(MainActivity.TAG, "EXEC");
+
+
+                        new SendMessage(getActivity(), Action.EXEC, myDevice)
+                                .execute(myDevice.getIp());
+
+                        /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
+                                .findFragmentById(R.id.frag_list);
+
+                        if (fragmentList != null) {
+                            ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
+                        }*/
+
+                        //Log.d(MainActivity.TAG, device.deviceAddress);
+                    }
+                });
         return mContentView;
     }
+
+
 
     @Override
     public void onConnectionInfoAvailable(final WifiP2pInfo info) {
@@ -139,6 +170,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 ((MainActivity) getActivity()).masterServer = new Servidor(Constants.SERVER_MASTER_PORT, getActivity());
                 ((MainActivity) getActivity()).masterServer.createServer();
                 ((MainActivity) getActivity()).masterServer.start();
+                ((MainActivity) getActivity()).pool = new ConcurrentLinkedQueue<Device>();
             }
 
             //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
@@ -148,6 +180,9 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
+            new Protocol(getActivity(), Action.CONNECT, myDevice, null, 1, null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
+
+
             mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
             ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
                     .getString(R.string.client_text));

@@ -33,11 +33,12 @@ public class Servidor extends Thread {
     public void run() {
         try {
             while (true) {
-                Socket s = serverSocket.accept();
+                Socket socket = serverSocket.accept();
                 Log.d(MainActivity.TAG, "Connection with the Server done!");
                 // Proccess connection
                 //new DeviceDetailFragment.ReceiveMessage(context).execute(s);
-                new ReceiveMessage(context).execute(s);
+                //new ReceiveMessage(context).execute(s);
+                new Protocol(context, Action.DEFAULT, null, null, 0, socket).execute("");
 
             }
         } catch (Exception e) {

@@ -1,12 +1,14 @@
 package es.artacho.tfm.optimizaciondistribuida;
 
+import android.net.wifi.p2p.WifiP2pDevice;
+
 import java.io.Serializable;
 
 /**
  * Created by Pablo on 12/15/2015.
  */
 public class Message implements Serializable {
-    //private Device device; // Sender device
+    private WifiP2pDevice device; // Master device
     private String address; // MAC of sender device
     private String message; // Data message
     private Action action; // Message in FSM
@@ -46,6 +48,14 @@ public class Message implements Serializable {
 
     public void setFlag(boolean flag) {
         this.flag = flag;
+    }
+
+    public WifiP2pDevice getDevice() {
+        return device;
+    }
+
+    public void setDevice(WifiP2pDevice device) {
+        this.device = device;
     }
 
     public String toString() {

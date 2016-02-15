@@ -40,4 +40,8 @@ public class Device {
         this.ip = ip;
     }
 
+    public String toString () {
+        return device.deviceName;
+    }
+
 }

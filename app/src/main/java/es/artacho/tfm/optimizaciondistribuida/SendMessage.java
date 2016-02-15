@@ -5,6 +5,7 @@ package es.artacho.tfm.optimizaciondistribuida;
  */
 
 import android.content.Context;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
@@ -22,23 +23,30 @@ import java.net.Socket;
 public class SendMessage extends AsyncTask<String, Void, Message> {
     private Context context; // Context of Activity
     private Action action; // Message in FSM to send
-    private Device device; // Sender device
+    private WifiP2pDevice senderDevice; // Information of sender device
+    private Device receiverDevice; // Information of receiver device
 
     private DeviceListFragment fragmentList = null; // view to notify data changed
 
     // Default constructor
-    public SendMessage(Context context, Action action, Device device) {
+    public SendMessage(Context context, Action action, Device receiverDevice) {
         this.context = context;
         this.action = action;
-        this.device = device;
-        fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
+        this.receiverDevice = receiverDevice;
+
+        this.fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                 .findFragmentById(R.id.frag_list);
+
+        this.senderDevice = null;
+        if (fragmentList != null) senderDevice = fragmentList.getDevice();
     }
 
     @Override
     // Receive IP of Server and returns received Message from Server
     protected Message doInBackground(String... ip) {
+
         try {
+
             String connectIP = ip[0];
 
             Socket client; // Socket for connection
@@ -47,46 +55,46 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
             ObjectInputStream inputStream; // InputStream to read data
 
             Message message = null;
-            String address = null;
+            String address = null; // MAC address of sender device
 
             Log.d(MainActivity.TAG, "Connecting to server socket to send message");
 
             switch (action) {
                 // Slave node must send its IP to Master node
                 case IP:
-
+                    double ini = 0, fin = 0;
+                    ini = System.currentTimeMillis();
                     client = new Socket();
                     client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), 8888);
 
                     outputStream = new ObjectOutputStream(client.getOutputStream());
 
-                    message = new Message(client.getLocalAddress().getHostAddress().toString());
+                    String slaveIP = client.getLocalAddress().getHostAddress().toString(); // IP of slave node
+
+                    // Create new Message
+                    message = new Message(slaveIP);
                     message.setAction(Action.IP);
-
-                    //fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
-                            //.findFragmentById(R.id.frag_list);
-
-                    if (fragmentList != null) {
-                        address = fragmentList.getDevice().deviceAddress;
-                    }
-
-                    Log.d(MainActivity.TAG, "DIFERENCIAS: " + address + " /// " + device.getDevice().deviceAddress);
-
-                    message.setAddress(address);
+                    message.setAddress(senderDevice.deviceAddress);
 
                     outputStream.writeObject(message);
                     outputStream.close();
                     client.close();
-                    Log.d(MainActivity.TAG, "SLAVE ADDRESS: " + address);
+                    fin = System.currentTimeMillis();
+
+                    Log.d(MainActivity.TAG, "TIEMPO: " + (fin - ini));
+
+
+                    Log.d(MainActivity.TAG, "IP Message: " + slaveIP);
+
 
 
                     break;
-
-
                 case ADD:
+
                     Log.d(MainActivity.TAG, "Connecting to server socket to send ADD message");
                     client = new Socket();
-                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 8888);
+                    Log.d(MainActivity.TAG, connectIP);
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 1500);
                     outputStream = new ObjectOutputStream(client.getOutputStream());
                     message = new Message(client.getLocalAddress().getHostAddress().toString());
                     message.setAction(Action.ADD);
@@ -103,9 +111,47 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     client.close();
 
 
-                    Log.d(MainActivity.TAG, "SLAVE ADDED? " + message.isFlag() );
+                    Log.d(MainActivity.TAG, "SLAVE ADDED? " + message.isFlag());
+
+                    ((MainActivity) context).pool.add(receiverDevice);
+
+                    Log.d(MainActivity.TAG, "POOLED DEVICES: " + ((MainActivity) context).pool.toString());
 
                     break;
+
+                case EXEC:
+
+                    Log.d(MainActivity.TAG, "Connecting to server socket to send EXEC message");
+                    client = new Socket();
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 8888);
+                    outputStream = new ObjectOutputStream(client.getOutputStream());
+                    message = new Message(client.getLocalAddress().getHostAddress().toString());
+                    message.setAction(Action.EXEC);
+                    message.setFlag(false);
+
+                    outputStream.writeObject(message);
+
+
+
+                    outputStream.close();
+                    client.close();
+
+                    break;
+
+
+                case RESUL:
+
+                    break;
+
+                case CONNECT:
+
+                    break;
+
+                case DISCONNECT:
+
+                    break;
+
+
                 default:
                     break;
             }
@@ -128,7 +174,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                 case ADD:
                     Toast.makeText(context, new Boolean(message.isFlag()).toString(), Toast.LENGTH_LONG).show();
 
-                    this.device.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
+                    this.receiverDevice.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
 
                     //Modificar status del device en cuestion
 
@@ -139,7 +185,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                         ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
                     }
 
-                    Log.d(MainActivity.TAG, "POOLED device: " + this.device.getIp());
+                    Log.d(MainActivity.TAG, "POOLED device: " + this.receiverDevice.getIp());
 
 
                     break;

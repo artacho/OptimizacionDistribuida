@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.ActionListener;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
@@ -19,6 +20,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
 
 /**
@@ -41,6 +46,7 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
     private BroadcastReceiver receiver = null;
     public Servidor slaveServer = null;
     public Servidor masterServer = null;
+    public ConcurrentLinkedQueue<Device> pool = null;
 
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
@@ -152,10 +158,14 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
                 Log.d(MainActivity.TAG, "I should be a slave");
                 // Create slave server and send IP to Group Owner
                 if (slaveServer == null) {
-                    slaveServer = new Servidor(Constants.SERVER_SLAVE_PORT, getApplicationContext());
+                    slaveServer = new Servidor(Constants.SERVER_SLAVE_PORT, MainActivity.this);
                     slaveServer.createServer();
                     slaveServer.start();
                 }
+
+                //------------------//
+
+
             }
             @Override
             public void onFailure(int reason) {

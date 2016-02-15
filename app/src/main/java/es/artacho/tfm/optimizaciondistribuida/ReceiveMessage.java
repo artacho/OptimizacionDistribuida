@@ -18,7 +18,7 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
     /**
      * @param context
      */
-    public ReceiveMessage(Context context ) {
+    public ReceiveMessage(Context context) {
         this.context = context;
     }
 
@@ -33,14 +33,46 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
             ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
             Message message = (Message) inputStream.readObject();
 
-            if (message.getAction().equals(Action.ADD)) {
-                message.setFlag(true);
-                outputStream = new ObjectOutputStream(socket.getOutputStream());
-                outputStream.writeObject(message);
-                outputStream.close();
+            Action action = message.getAction();
+
+
+            switch (action) {
+                case ADD:
+
+                    message.setFlag(true);
+                    outputStream = new ObjectOutputStream(socket.getOutputStream());
+                    outputStream.writeObject(message);
+                    outputStream.close();
+
+                    Log.d(MainActivity.TAG, "RECIBIDO: " + message.toString());
+
+                    break;
+
+
+                case EXEC:
+
+                    Log.d(MainActivity.TAG, "EJECUTANDO RECIBIDO");
+
+
+                    DeviceDetailFragment fragmentDetail = (DeviceDetailFragment) ((MainActivity) context).getFragmentManager()
+                            .findFragmentById(R.id.frag_detail);
+
+                    if (fragmentDetail != null) {
+                        Log.d(MainActivity.TAG, "Group Owner IP: " + fragmentDetail.info.groupOwnerAddress.toString());
+                    } else {
+                        Log.d(MainActivity.TAG, "ES NULO EL FRAGMENT");
+                    }
+
+
+
+                default:
+
+                    break;
             }
 
-            Log.d(MainActivity.TAG, message.toString() + " 10");
+
+
+
 
             return message;
 
@@ -59,21 +91,31 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
         Log.d(MainActivity.TAG, "Soy servidor y voy a hacer un texto");
 
 
-        if (message.getAction().equals(Action.IP)) {
-            DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
-                    .findFragmentById(R.id.frag_list);
+        Action action = message.getAction();
 
-            if (fragmentList != null) {
-                for (Device d : fragmentList.getDevices()) {
-                    if (d.getDevice().deviceAddress.equals(message.getAddress())) {
-                        d.setIp(message.toString());
-                        Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+        switch (action) {
+            case IP:
+
+                DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
+                        .findFragmentById(R.id.frag_list);
+
+                if (fragmentList != null) {
+                    for (Device d : fragmentList.getDevices()) {
+                        if (d.getDevice().deviceAddress.equals(message.getAddress())) {
+                            d.setIp(message.toString());
+                            Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+                        }
                     }
                 }
-            }
+
+                break;
+
+            case EXEC:
+
+
+                break;
+
         }
-
-
 
     }
 
