@@ -1,6 +1,8 @@
-package es.artacho.tfm.optimizaciondistribuida;
+package oldClasses;
 
 import java.io.Serializable;
+
+import es.artacho.tfm.optimizaciondistribuida.Action;
 
 /**
  * Created by Pablo on 1/11/2016.

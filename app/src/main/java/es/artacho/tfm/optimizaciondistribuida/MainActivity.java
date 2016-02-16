@@ -58,11 +58,13 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // add necessary intent values to be matched.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+
         manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(this, getMainLooper(), null);
     }
@@ -156,6 +158,7 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
             public void onSuccess() {
                 Log.d(MainActivity.TAG, "Callback successful connection");
                 Log.d(MainActivity.TAG, "I should be a slave");
+
                 // Create slave server and send IP to Group Owner
                 if (slaveServer == null) {
                     slaveServer = new Servidor(Constants.SERVER_SLAVE_PORT, MainActivity.this);

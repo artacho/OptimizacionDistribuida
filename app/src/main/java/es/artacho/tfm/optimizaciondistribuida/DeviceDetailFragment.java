@@ -107,7 +107,9 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                     @Override
                     public void onClick(View v) {
 
-                        new Protocol(getActivity(), Action.ADD, myDevice, null, 0, null).execute(myDevice.getIp());
+                        //new Protocol(getActivity(), Action.ADD, myDevice, null, 0, null).execute(myDevice.getIp());
+                        new SendMessage(getActivity(), Action.ADD, myDevice, null).execute(myDevice.getIp());
+
                         //new SendMessage(getActivity(), Action.ADD, myDevice)
                                 //.execute(myDevice.getIp());
 
@@ -128,7 +130,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         Log.d(MainActivity.TAG, "EXEC");
 
 
-                        new SendMessage(getActivity(), Action.EXEC, myDevice)
+                        new SendMessage(getActivity(), Action.EXEC, myDevice,null)
                                 .execute(myDevice.getIp());
 
                         /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
@@ -167,6 +169,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         if (info.groupFormed && info.isGroupOwner) {
 
             if (((MainActivity) getActivity()).masterServer == null) {
+
+                Log.d(MainActivity.TAG, "Creando servidor socket");
                 ((MainActivity) getActivity()).masterServer = new Servidor(Constants.SERVER_MASTER_PORT, getActivity());
                 ((MainActivity) getActivity()).masterServer.createServer();
                 ((MainActivity) getActivity()).masterServer.start();
@@ -180,8 +184,12 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
-            new Protocol(getActivity(), Action.CONNECT, myDevice, null, 1, null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
+            //new Protocol(getActivity(), Action.CONNECT, myDevice, null, 1, null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
 
+            Log.d(MainActivity.TAG, "ESCLAVOOOOOO");
+            Log.d(MainActivity.TAG, device.deviceAddress);
+
+            new SendMessage(getActivity(), Action.CONNECT, myDevice, device).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
 
             mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
             ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()

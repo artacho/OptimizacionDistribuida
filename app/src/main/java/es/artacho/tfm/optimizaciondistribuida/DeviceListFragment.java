@@ -18,6 +18,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
+
+import oldClasses.Status;
+
 /**
  * A ListFragment that displays available peers on discovery and requests the
  * parent activity to handle user interaction events

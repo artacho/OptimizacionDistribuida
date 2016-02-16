@@ -29,16 +29,20 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
     private DeviceListFragment fragmentList = null; // view to notify data changed
 
     // Default constructor
-    public SendMessage(Context context, Action action, Device receiverDevice) {
+    public SendMessage(Context context, Action action, Device receiverDevice, WifiP2pDevice senderDevice) {
         this.context = context;
         this.action = action;
         this.receiverDevice = receiverDevice;
+        this.senderDevice = senderDevice;
 
         this.fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                 .findFragmentById(R.id.frag_list);
 
         this.senderDevice = null;
-        if (fragmentList != null) senderDevice = fragmentList.getDevice();
+        if (fragmentList != null){
+            Log.d(MainActivity.TAG, "ESTABLECIENDO SENDER");
+            this.senderDevice = fragmentList.getDevice();
+        }
     }
 
     @Override
@@ -48,7 +52,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
         try {
 
             String connectIP = ip[0];
-
+            String slaveIP;
             Socket client; // Socket for connection
 
             ObjectOutputStream outputStream; // OutputStream to write data
@@ -61,10 +65,14 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
 
             switch (action) {
                 // Slave node must send its IP to Master node
-                case IP:
+                /*case IP:
+
                     double ini = 0, fin = 0;
                     ini = System.currentTimeMillis();
                     client = new Socket();
+
+                    Log.d(MainActivity.TAG, "IP MASTER: " + connectIP);
+
                     client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), 8888);
 
                     outputStream = new ObjectOutputStream(client.getOutputStream());
@@ -74,6 +82,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     // Create new Message
                     message = new Message(slaveIP);
                     message.setAction(Action.IP);
+                    Log.d(MainActivity.TAG, senderDevice.deviceAddress);
                     message.setAddress(senderDevice.deviceAddress);
 
                     outputStream.writeObject(message);
@@ -88,7 +97,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
 
 
 
-                    break;
+                    break;*/
                 case ADD:
 
                     Log.d(MainActivity.TAG, "Connecting to server socket to send ADD message");
@@ -144,8 +153,34 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     break;
 
                 case CONNECT:
+                    Log.d(MainActivity.TAG, "SLAVE >> SENDING CONNECT MESSAGE");
+
+                    // Socket connection
+                    client = new Socket();
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), Constants.CONNECTION_TIMEOUT);
+
+                    // Get IP of slave node
+                    slaveIP = client.getLocalAddress().getHostAddress().toString();
+
+                    // Create new Message
+                    Message dataMessage = new Message("");
+                    dataMessage.setAction(Action.CONNECT);
+                    dataMessage.setMessage(slaveIP);
+                    dataMessage.setAddress(senderDevice.deviceAddress);
+                    //dataMessage.set(1);
+
+                    // Create stream and write object
+                    outputStream = new ObjectOutputStream(client.getOutputStream());
+                    outputStream.writeObject(dataMessage);
+
+                    // Close resources
+                    outputStream.close();
+                    client.close();
+
+                    Log.d(MainActivity.TAG, "SLAVE >> FINISHED CONNECT MESSAGE - " + slaveIP);
 
                     break;
+
 
                 case DISCONNECT:
 
@@ -174,7 +209,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                 case ADD:
                     Toast.makeText(context, new Boolean(message.isFlag()).toString(), Toast.LENGTH_LONG).show();
 
-                    this.receiverDevice.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
+                    this.receiverDevice.setStatus(oldClasses.Status.POOL);
 
                     //Modificar status del device en cuestion
 

@@ -1,9 +1,6 @@
-package es.artacho.tfm.optimizaciondistribuida;
+package oldClasses;
 
-import android.app.ProgressDialog;
 import android.content.Context;
-import android.net.wifi.WpsInfo;
-import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -14,6 +11,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import es.artacho.tfm.optimizaciondistribuida.Action;
+import es.artacho.tfm.optimizaciondistribuida.Constants;
+import es.artacho.tfm.optimizaciondistribuida.Device;
+import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment;
+import es.artacho.tfm.optimizaciondistribuida.MainActivity;
+import es.artacho.tfm.optimizaciondistribuida.R;
 
 /**
  * Created by Pablo on 1/11/2016.
@@ -60,9 +64,9 @@ public class Protocol extends AsyncTask<String, Void, Data> {
         try {
             switch (action) {
 
-                case IP:
+                //case IP:
 
-                    break;
+                    //break;
 
                 case CONNECT:
                     Log.d(MainActivity.TAG, "SLAVE >> SENDING CONNECT MESSAGE");
@@ -272,16 +276,16 @@ public class Protocol extends AsyncTask<String, Void, Data> {
                 case ADD:
                     Toast.makeText(context, new Boolean(dataMessage.isAck()).toString(), Toast.LENGTH_LONG).show();
 
-                    this.receiverDevice.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
+                    this.receiverDevice.setStatus(oldClasses.Status.POOL);
 
                    //Modificar status del device en cuestion
 
                     //DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                     // .findFragmentById(R.id.frag_list);
 
-                    if (fragmentList != null) {
-                        ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
-                    }
+                  //  if (fragmentList != null) {
+                  //      ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
+                  //  }
 
                     break;
             }

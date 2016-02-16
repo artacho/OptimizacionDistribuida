@@ -94,12 +94,32 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
         Action action = message.getAction();
 
         switch (action) {
-            case IP:
+            /*case IP:
 
                 DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                         .findFragmentById(R.id.frag_list);
 
+                Log.d(MainActivity.TAG, "Entro1");
                 if (fragmentList != null) {
+                    Log.d(MainActivity.TAG, "Entro2");
+                    for (Device d : fragmentList.getDevices()) {
+                        if (d.getDevice().deviceAddress.equals(message.getAddress())) {
+                            d.setIp(message.toString());
+                            Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+
+                break;*/
+
+            case CONNECT:
+
+                DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
+                        .findFragmentById(R.id.frag_list);
+
+                Log.d(MainActivity.TAG, "Entro1");
+                if (fragmentList != null) {
+                    Log.d(MainActivity.TAG, "Entro2");
                     for (Device d : fragmentList.getDevices()) {
                         if (d.getDevice().deviceAddress.equals(message.getAddress())) {
                             d.setIp(message.toString());

@@ -38,7 +38,8 @@ public class Servidor extends Thread {
                 // Proccess connection
                 //new DeviceDetailFragment.ReceiveMessage(context).execute(s);
                 //new ReceiveMessage(context).execute(s);
-                new Protocol(context, Action.DEFAULT, null, null, 0, socket).execute("");
+                //new Protocol(context, Action.DEFAULT, null, null, 0, socket).execute("");
+                new ReceiveMessage(context).execute(socket);
 
             }
         } catch (Exception e) {
