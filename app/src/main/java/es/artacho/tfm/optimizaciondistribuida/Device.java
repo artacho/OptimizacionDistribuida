@@ -2,8 +2,6 @@ package es.artacho.tfm.optimizaciondistribuida;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 
-import oldClasses.Status;
-
 /**
  * Created by Pablo on 12/17/2015.
  */

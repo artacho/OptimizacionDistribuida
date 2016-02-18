@@ -2,29 +2,18 @@ package es.artacho.tfm.optimizaciondistribuida;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -32,7 +21,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * i.e. setting up network connection and transferring data.
  */
 public class DeviceDetailFragment extends Fragment implements ConnectionInfoListener {
-    protected static final int CHOOSE_FILE_RESULT_CODE = 20;
     private View mContentView = null;
     private WifiP2pDevice device;
     protected Device myDevice;
@@ -43,23 +31,26 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mContentView = inflater.inflate(R.layout.fragment_device_detail, null);
+        // Connect
         mContentView.findViewById(R.id.btn_connect).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = device.deviceAddress;
                 config.wps.setup = WpsInfo.PBC;
-                config.groupOwnerIntent = 0;
+                config.groupOwnerIntent = 0; // priority to determine group owner
+
                 if (progressDialog != null && progressDialog.isShowing()) {
                     progressDialog.dismiss();
                 }
                 progressDialog = ProgressDialog.show(getActivity(), "Press back to cancel",
                         "Connecting to :" + device.deviceAddress, true, true
 //                        new DialogInterface.OnCancelListener() {
-//
+
 //                            @Override
 //                            public void onCancel(DialogInterface dialog) {
 //                                ((DeviceActionListener) getActivity()).cancelDisconnect();
@@ -67,16 +58,9 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 //                        }
                 );
                 ((DeviceActionListener) getActivity()).connect(config);
-
-                /*if (myDevice != null && info != null) {
-                    new Protocol(getActivity(), Action.CONNECT, myDevice).execute(info.groupOwnerAddress.toString().substring(1,info.groupOwnerAddress.toString().length()));
-                } else {
-                    Log.d(MainActivity.TAG, "NULOOO");
-                }*/
-
-
             }
         });
+        // Disconnect
         mContentView.findViewById(R.id.btn_disconnect).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -84,69 +68,41 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                         ((DeviceActionListener) getActivity()).disconnect();
                     }
                 });
+
+        // In this moment nothing
         mContentView.findViewById(R.id.btn_start_client).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        // Allow user to pick an image from Gallery or other
-                        // registered apps
-                        /*Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                        intent.setType("image/*");
-                        startActivityForResult(intent, CHOOSE_FILE_RESULT_CODE);*/
                         Log.d(MainActivity.TAG, "GO IP: " + info.groupOwnerAddress.toString());
                         String s = info.groupOwnerAddress.toString();
                         s = s.substring(1, s.length());
                         Log.d(MainActivity.TAG, "GO IP: " + s);
-
-                        /*new SendMessage(getActivity(), Action.IP, myDevice)
-                                .execute(s);*/
                     }
                 });
+        // Add
         mContentView.findViewById(R.id.btn_add_slave).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
 
                         //new Protocol(getActivity(), Action.ADD, myDevice, null, 0, null).execute(myDevice.getIp());
+                        Log.d(MainActivity.TAG, "ADD");
                         new SendMessage(getActivity(), Action.ADD, myDevice, null).execute(myDevice.getIp());
-
-                        //new SendMessage(getActivity(), Action.ADD, myDevice)
-                                //.execute(myDevice.getIp());
-
-                        /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
-                                .findFragmentById(R.id.frag_list);
-
-                        if (fragmentList != null) {
-                            ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
-                        }*/
-
-                        Log.d(MainActivity.TAG, device.deviceAddress);
                     }
                 });
+        // Execute
         mContentView.findViewById(R.id.btn_exec).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Log.d(MainActivity.TAG, "EXEC");
-
-
                         new SendMessage(getActivity(), Action.EXEC, myDevice,null)
                                 .execute(myDevice.getIp());
-
-                        /*DeviceListFragment fragmentList = (DeviceListFragment) getFragmentManager()
-                                .findFragmentById(R.id.frag_list);
-
-                        if (fragmentList != null) {
-                            ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();
-                        }*/
-
-                        //Log.d(MainActivity.TAG, device.deviceAddress);
                     }
                 });
         return mContentView;
     }
-
-
 
     @Override
     public void onConnectionInfoAvailable(final WifiP2pInfo info) {
@@ -163,41 +119,35 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         // InetAddress from WifiP2pInfo struct.
         view = (TextView) mContentView.findViewById(R.id.device_info);
         view.setText("Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
-        // After the group negotiation, we assign the group owner as the file
-        // server. The file server is single threaded, single connection server
-        // socket.
+
+        // After the group negotiation, we assign the group owner
         if (info.groupFormed && info.isGroupOwner) {
 
+            // Create server for the master device
             if (((MainActivity) getActivity()).masterServer == null) {
 
-                Log.d(MainActivity.TAG, "Creando servidor socket");
+                Log.d(MainActivity.TAG, "MASTER >> Server socket created!");
                 ((MainActivity) getActivity()).masterServer = new Servidor(Constants.SERVER_MASTER_PORT, getActivity());
                 ((MainActivity) getActivity()).masterServer.createServer();
                 ((MainActivity) getActivity()).masterServer.start();
-                ((MainActivity) getActivity()).pool = new ConcurrentLinkedQueue<Device>();
+                ((MainActivity) getActivity()).pool = new ConcurrentLinkedQueue<>();
             }
-
-            //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
-                    //.execute();
-
             //mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.VISIBLE);
         } else if (info.groupFormed) {
-            // The other device acts as the client. In this case, we enable the
-            // get file button.
-            //new Protocol(getActivity(), Action.CONNECT, myDevice, null, 1, null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
 
-            Log.d(MainActivity.TAG, "ESCLAVOOOOOO");
-            Log.d(MainActivity.TAG, device.deviceAddress);
+            //Log.d(MainActivity.TAG, "ESCLAVOOOOOO");
+            //Log.d(MainActivity.TAG, device.deviceAddress);
 
             new SendMessage(getActivity(), Action.CONNECT, myDevice, device).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
 
-            mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
+            /*mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
             ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
-                    .getString(R.string.client_text));
+                    .getString(R.string.client_text));*/
         }
         // hide the connect button
         mContentView.findViewById(R.id.btn_connect).setVisibility(View.GONE);
     }
+
     /**
      * Updates the UI with device data
      */
@@ -209,8 +159,6 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         view.setText(device.deviceAddress);
         view = (TextView) mContentView.findViewById(R.id.device_info);
         view.setText(device.toString());
-
-        Log.d(MainActivity.TAG, "IP: " + protocolDevice.getIp());
 
         // Permite añadir al pool los dispositivos conectados
         if (device.status == 0) {
@@ -238,6 +186,4 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.GONE);
         this.getView().setVisibility(View.GONE);
     }
-
-
 }

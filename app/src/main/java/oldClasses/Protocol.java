@@ -276,7 +276,7 @@ public class Protocol extends AsyncTask<String, Void, Data> {
                 case ADD:
                     Toast.makeText(context, new Boolean(dataMessage.isAck()).toString(), Toast.LENGTH_LONG).show();
 
-                    this.receiverDevice.setStatus(oldClasses.Status.POOL);
+                    this.receiverDevice.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
 
                    //Modificar status del device en cuestion
 

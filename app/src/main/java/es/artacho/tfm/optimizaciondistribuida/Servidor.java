@@ -11,10 +11,9 @@ import java.net.Socket;
  * Created by Pablo on 12/17/2015.
  */
 public class Servidor extends Thread {
+    private Context context;
     private ServerSocket serverSocket;
     private int PORT;
-    private Context context;
-
 
     public Servidor(int PORT, Context context) {
         this.PORT = PORT;
@@ -35,10 +34,6 @@ public class Servidor extends Thread {
             while (true) {
                 Socket socket = serverSocket.accept();
                 Log.d(MainActivity.TAG, "Connection with the Server done!");
-                // Proccess connection
-                //new DeviceDetailFragment.ReceiveMessage(context).execute(s);
-                //new ReceiveMessage(context).execute(s);
-                //new Protocol(context, Action.DEFAULT, null, null, 0, socket).execute("");
                 new ReceiveMessage(context).execute(socket);
 
             }

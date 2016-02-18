@@ -19,42 +19,42 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import oldClasses.Status;
-
 /**
  * A ListFragment that displays available peers on discovery and requests the
  * parent activity to handle user interaction events
  */
 public class DeviceListFragment extends ListFragment implements PeerListListener {
     private List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>(); // peers on WiFi P2P
-
-    public List<Device> getDevices() {
-        return devices;
-    }
-
-    private List<Device> devices = new ArrayList<Device>(); // peers on list
+    private List<Device> devices = new ArrayList<Device>(); // protocol peers on List
 
     ProgressDialog progressDialog = null;
     View mContentView = null;
 
     private WifiP2pDevice device;
-    private Device protocolDevice;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         this.setListAdapter(new WiFiPeerListAdapter(getActivity(), R.layout.row_devices, devices));
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mContentView = inflater.inflate(R.layout.fragment_device_list, null);
         return mContentView;
     }
+
     /**
      * @return this device
      */
     public WifiP2pDevice getDevice() {
         return device;
+    }
+    /*
+     * @return list of devices
+     */
+    public List<Device> getDevices() {
+        return devices;
     }
 
     private static String getDeviceStatus(int deviceStatus) {
@@ -83,8 +83,9 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
         Device protocolDevice = (Device) getListAdapter().getItem(position);
         ((DeviceActionListener) getActivity()).showDetails(protocolDevice);
     }
+
     /**
-     * Array adapter for ListFragment that maintains WifiP2pDevice list.
+     * Array adapter for ListFragment that maintains Device list.
      */
     protected class WiFiPeerListAdapter extends ArrayAdapter<Device> {
         private List<Device> items;
@@ -122,6 +123,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
             return v;
         }
     }
+
     /**
      * Update UI for this device.
      */
@@ -132,6 +134,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
         view = (TextView) mContentView.findViewById(R.id.my_status);
         view.setText(getDeviceStatus(device.status));
     }
+
     @Override
     public void onPeersAvailable(WifiP2pDeviceList peerList) {
         if (progressDialog != null && progressDialog.isShowing()) {
@@ -142,7 +145,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
 
         // Update protocolDevices according to WiFi state, update state, update insert and delete.
 
-        boolean isFound = false;
+        boolean isFound;
         List<Device> changedDevices = new ArrayList<Device>();
 
         for (WifiP2pDevice newDevice : peers) {
@@ -162,8 +165,10 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
                     } else { // no changes
                         changedDevices.add(oldDevice);
                     }
+                    break;
                 }
             }
+
             if (!isFound) {
                 Device addDevice = new Device(newDevice, Status.NSYNC, "");
                 changedDevices.add(addDevice);
@@ -182,6 +187,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
             return;
         }
     }
+
     public void clearPeers() {
         peers.clear();
         devices.clear();
@@ -202,6 +208,9 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
                     }
                 });
     }
+
+
+
     /**
      * An interface-callback for the activity to listen to fragment interaction
      * events.

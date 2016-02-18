@@ -209,7 +209,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                 case ADD:
                     Toast.makeText(context, new Boolean(message.isFlag()).toString(), Toast.LENGTH_LONG).show();
 
-                    this.receiverDevice.setStatus(oldClasses.Status.POOL);
+                    this.receiverDevice.setStatus(es.artacho.tfm.optimizaciondistribuida.Status.POOL);
 
                     //Modificar status del device en cuestion
 
