@@ -44,4 +44,8 @@ public class Device {
         return device.deviceName;
     }
 
+    public boolean equals(Device d) {
+        return this.getDevice().deviceName.equals(d.getDevice().deviceName);
+    }
+
 }

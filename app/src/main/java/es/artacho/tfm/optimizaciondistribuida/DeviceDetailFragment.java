@@ -65,7 +65,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ((DeviceActionListener) getActivity()).disconnect();
+                        new SendMessage(getActivity(), Action.DISCONNECT, myDevice, myDevice.getDevice()).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
+                        //((DeviceActionListener) getActivity()).disconnect();
                     }
                 });
 

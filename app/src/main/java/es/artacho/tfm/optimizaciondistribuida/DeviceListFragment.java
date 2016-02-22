@@ -151,8 +151,10 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
         for (WifiP2pDevice newDevice : peers) {
             isFound = false;
             for (Device oldDevice : devices) {
+                Log.d(MainActivity.TAG, "HOLA");
                 if (oldDevice.getDevice().deviceAddress.equals(newDevice.deviceAddress)) { // found device
                     isFound = true;
+
                     if (newDevice.status == 0 && oldDevice.getDevice().status != 0) { //connection
                         oldDevice.setDevice(newDevice);
                         oldDevice.setStatus(Status.WAIT); // change state on connect
@@ -160,8 +162,15 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
                         break;
                     } else if (newDevice.status != 0 && oldDevice.getDevice().status == 0) { // disconnection
                         oldDevice.setDevice(newDevice);
+                        Log.d(MainActivity.TAG, "" + newDevice.status);
                         oldDevice.setStatus(Status.NSYNC); // change state on connect
                         changedDevices.add(oldDevice);
+
+
+                        // quitar device de la pila
+                        /*((MainActivity)getActivity()).pool.remove(oldDevice);
+                        Log.d(MainActivity.TAG, "DESCONEXION: " + ((MainActivity) getActivity()).pool.toString());*/
+
                     } else { // no changes
                         changedDevices.add(oldDevice);
                     }

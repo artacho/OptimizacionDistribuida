@@ -38,30 +38,27 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
         this.fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                 .findFragmentById(R.id.frag_list);
 
-        this.senderDevice = null;
         if (fragmentList != null){
-            Log.d(MainActivity.TAG, "ESTABLECIENDO SENDER");
-            this.senderDevice = fragmentList.getDevice();
+             this.senderDevice = fragmentList.getDevice();
         }
     }
 
+    // Receive IP of Server to connect and returns received Message
     @Override
-    // Receive IP of Server and returns received Message from Server
     protected Message doInBackground(String... ip) {
 
         try {
-
-            String connectIP = ip[0];
-            String slaveIP;
+            String slaveIP; // IP of slave device
             Socket client; // Socket for connection
+            Message message = null; // Message to send
+            String address = null; // MAC address of sender device
 
             ObjectOutputStream outputStream; // OutputStream to write data
             ObjectInputStream inputStream; // InputStream to read data
 
-            Message message = null;
-            String address = null; // MAC address of sender device
+            String connectIP = ip[0]; // IP of server
 
-            Log.d(MainActivity.TAG, "Connecting to server socket to send message");
+            //Log.d(MainActivity.TAG, "Connecting to server socket to send message");
 
             switch (action) {
                 // Slave node must send its IP to Master node
@@ -101,10 +98,11 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                 case ADD:
 
                     Log.d(MainActivity.TAG, "Connecting to server socket to send ADD message");
+
                     client = new Socket();
-                    Log.d(MainActivity.TAG, connectIP);
-                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 1500);
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), Constants.CONNECTION_TIMEOUT);
                     outputStream = new ObjectOutputStream(client.getOutputStream());
+
                     message = new Message(client.getLocalAddress().getHostAddress().toString());
                     message.setAction(Action.ADD);
                     message.setFlag(false);
@@ -114,11 +112,9 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     inputStream = new ObjectInputStream(client.getInputStream());
                     message = (Message) inputStream.readObject();
 
-
                     outputStream.close();
                     inputStream.close();
                     client.close();
-
 
                     Log.d(MainActivity.TAG, "SLAVE ADDED? " + message.isFlag());
 
@@ -132,13 +128,28 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
 
                     Log.d(MainActivity.TAG, "Connecting to server socket to send EXEC message");
                     client = new Socket();
-                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 8888);
-                    outputStream = new ObjectOutputStream(client.getOutputStream());
-                    message = new Message(client.getLocalAddress().getHostAddress().toString());
-                    message.setAction(Action.EXEC);
-                    message.setFlag(false);
 
-                    outputStream.writeObject(message);
+                    Device d = ((MainActivity)context).pool.peek();
+                    if (d != null) {
+                        //client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 8888);
+                        client.connect((new InetSocketAddress(d.getIp(), Constants.SERVER_SLAVE_PORT)), 8888);
+                        outputStream = new ObjectOutputStream(client.getOutputStream());
+                        message = new Message(client.getLocalAddress().getHostAddress().toString());
+                        message.setAction(Action.EXEC);
+                        message.setFlag(false);
+                        outputStream.writeObject(message);
+                    } else {
+                        client.connect((new InetSocketAddress("", Constants.SERVER_SLAVE_PORT)), 8888);
+                        outputStream = new ObjectOutputStream(client.getOutputStream());
+                        message = new Message(client.getLocalAddress().getHostAddress().toString());
+                        message.setAction(Action.EXEC);
+                        message.setFlag(false);
+                        outputStream.writeObject(message);
+
+                    }
+
+
+
 
 
 
@@ -148,9 +159,39 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     break;
 
 
+                // Modificar
                 case RESUL:
 
+                    Log.d(MainActivity.TAG, "Connecting to server socket to send ADD message");
+
+                    client = new Socket();
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), Constants.CONNECTION_TIMEOUT);
+                    slaveIP = client.getLocalAddress().getHostAddress().toString();
+
+                    // Create new Message
+                    Message dataMessage = new Message("");
+                    dataMessage.setAction(Action.RESUL);
+                    dataMessage.setMessage(slaveIP);
+                    dataMessage.setAddress(senderDevice.deviceAddress);
+                    //dataMessage.set(1);
+
+                    // Create stream and write object
+                    outputStream = new ObjectOutputStream(client.getOutputStream());
+                    outputStream.writeObject(dataMessage);
+
+                    inputStream = new ObjectInputStream(client.getInputStream());
+                    message = (Message) inputStream.readObject();
+                    Log.d(MainActivity.TAG, "RESUL finalizado");
+
+                    // Close resources
+                    outputStream.close();
+                    inputStream.close();
+                    client.close();
+
+                    Log.d(MainActivity.TAG, "SLAVE >> FINISHED RESUL MESSAGE - " + slaveIP);
+
                     break;
+
 
                 case CONNECT:
                     Log.d(MainActivity.TAG, "SLAVE >> SENDING CONNECT MESSAGE");
@@ -163,7 +204,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     slaveIP = client.getLocalAddress().getHostAddress().toString();
 
                     // Create new Message
-                    Message dataMessage = new Message("");
+                    dataMessage = new Message("");
                     dataMessage.setAction(Action.CONNECT);
                     dataMessage.setMessage(slaveIP);
                     dataMessage.setAddress(senderDevice.deviceAddress);
@@ -173,8 +214,13 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     outputStream = new ObjectOutputStream(client.getOutputStream());
                     outputStream.writeObject(dataMessage);
 
+                    inputStream = new ObjectInputStream(client.getInputStream());
+                    message = (Message) inputStream.readObject();
+                    Log.d(MainActivity.TAG, "CONNECT finalizado");
+
                     // Close resources
                     outputStream.close();
+                    inputStream.close();
                     client.close();
 
                     Log.d(MainActivity.TAG, "SLAVE >> FINISHED CONNECT MESSAGE - " + slaveIP);
@@ -183,6 +229,26 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
 
 
                 case DISCONNECT:
+
+                    Log.d(MainActivity.TAG, "Connecting to server socket to send DISCONNECT message");
+
+                    client = new Socket();
+                    client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), Constants.CONNECTION_TIMEOUT);
+                    outputStream = new ObjectOutputStream(client.getOutputStream());
+
+                    Log.d(MainActivity.TAG, "ENVIA + " + senderDevice.deviceName );
+                    message = new Message(senderDevice.deviceName);
+                    message.setAction(Action.DISCONNECT);
+                    message.setFlag(false);
+
+                    outputStream.writeObject(message);
+
+                    inputStream = new ObjectInputStream(client.getInputStream());
+                    message = (Message) inputStream.readObject();
+
+                    outputStream.close();
+                    inputStream.close();
+                    client.close();
 
                     break;
 
@@ -223,6 +289,10 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     Log.d(MainActivity.TAG, "POOLED device: " + this.receiverDevice.getIp());
 
 
+                    break;
+                case DISCONNECT:
+
+                    ((DeviceListFragment.DeviceActionListener) ((MainActivity) context)).disconnect();
                     break;
             }
         }

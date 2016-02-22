@@ -98,7 +98,7 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
                 .findFragmentById(R.id.frag_detail);
 
         if (fragmentList != null) {
-            fragmentList.clearPeers();
+            //fragmentList.clearPeers(); // do not clear list on disconnect
         }
         if (fragmentDetails != null) {
             fragmentDetails.resetViews();
