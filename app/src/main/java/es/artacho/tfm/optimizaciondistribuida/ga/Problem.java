@@ -5,8 +5,16 @@ package es.artacho.tfm.optimizaciondistribuida.ga;//////////////////////////////
 ///         Problem Function AND Representation (GL, GN, Ranges)            ///
 ///////////////////////////////////////////////////////////////////////////////
 
-import java.util.Random;
+import android.content.Context;
+import android.net.wifi.p2p.WifiP2pDevice;
 
+import java.util.Random;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import es.artacho.tfm.optimizaciondistribuida.Action;
+import es.artacho.tfm.optimizaciondistribuida.Device;
+import es.artacho.tfm.optimizaciondistribuida.MainActivity;
+import es.artacho.tfm.optimizaciondistribuida.PoolDevice;
 import es.artacho.tfm.optimizaciondistribuida.SendMessage;
 
 
@@ -19,34 +27,54 @@ public abstract class Problem                    // Maximization task
     protected double target_fitness;  	// Target fitness value -MAXIMUM-
     protected boolean tf_known;       	// Is the taret fitness known????
     protected static Random r = new Random();	// Random uniform variable
-    
+
+
+
+    protected LinkedBlockingQueue<Device> pooledDevices;
+
+    protected Context context;
+
     public Problem() {
         CL              = GN*GL;
         fitness_counter = 0;
         tf_known        = false;
         target_fitness  = -999999.9;
     }
-    
+
     public int     get_geneL()           { return GL; }
     public int     get_geneN()           { return GN; }
     public void    set_geneL(int gl)     { GL = gl; CL=GN*GL; }
     public void    set_geneN(int gn)     { GN = gn; CL=GN*GL; }
+    public void setPooledDevices(LinkedBlockingQueue<Device> pooledDevices) {
+        this.pooledDevices = pooledDevices;
+    }
+    public void setContext(Context context) {
+        this.context = context;
+    }
     public long    get_fitness_counter() { return fitness_counter; }
     public double  get_target_fitness()  { return target_fitness;  }
     public boolean tf_known()            { return tf_known;        }
-    
+
     public void    set_target_fitness(double tf) {
         target_fitness = tf;
         tf_known       = true;
     }
-    
-    
-    public double evaluateStep(Individual Indiv) {
-            fitness_counter++ ;
-        //new SendMessage();
-            return Evaluate(Indiv) ;
-    } 
-    
+
+
+    public double evaluateStep (Individual Indiv) throws InterruptedException {
+        fitness_counter++ ;
+        //cola.pop();
+        //pooledDevices.take();
+        Device device = pooledDevices.take();
+        System.out.println("OPTIMIZACION : " +pooledDevices.toString());
+
+        new SendMessage((MainActivity) context, Action.EXEC, device,null, Indiv)
+                .execute(device.getIp());
+        System.out.println("evaluado");
+        //return Evaluate(Indiv) ;
+        return 0.0;
+    }
+
     public abstract double Evaluate(Individual Indiv) ;
 }
 // END OF CLASS: Problem

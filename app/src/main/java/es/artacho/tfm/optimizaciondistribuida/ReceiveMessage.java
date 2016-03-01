@@ -3,6 +3,7 @@ package es.artacho.tfm.optimizaciondistribuida;
 import android.content.Context;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.AsyncTask;
+import android.support.v4.util.Pools;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -95,6 +96,7 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
 
                     Log.d(MainActivity.TAG, "EJECUTANDO RECIBIDO");
 
+                    Thread.sleep(500);
 
                     DeviceDetailFragment fragmentDetail = (DeviceDetailFragment) ((MainActivity) context).getFragmentManager()
                             .findFragmentById(R.id.frag_detail);
@@ -110,13 +112,32 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
 
                 case RESUL:
 
-                    message.setFlag(true);
+                    Log.d(MainActivity.TAG, "RECIBO RESUL");
+
+                    try {
+
+                        WifiP2pDevice p2p = new WifiP2pDevice();
+                        p2p.deviceAddress = message.getReceiver().deviceAddress;
+                        p2p.deviceName = message.getReceiver().deviceName;
+                        Device d = new Device (p2p,null,message.getReceiver().getIp());
+
+
+                        ((MainActivity)context).pool.put(d);
+                        Log.d(MainActivity.TAG, "AÑADO DEVICE A POOL");
+
+                        Log.d (MainActivity.TAG,((MainActivity)context).pool.toString());
+
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    /*message.setFlag(true);
 
                     outputStream = new ObjectOutputStream(socket.getOutputStream());
                     outputStream.writeObject(message);
                     outputStream.close();
 
-                    Log.d(MainActivity.TAG, "RESUL MESSAGE RECIBIDO: " + message.toString());
+                    Log.d(MainActivity.TAG, "RESUL MESSAGE RECIBIDO: " + message.toString());*/
 
 
                     break;
@@ -137,6 +158,8 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -144,10 +167,12 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
     protected void onPostExecute(Message message) {
         Log.d(MainActivity.TAG, "Soy servidor y voy a hacer un texto");
 
+        if (message != null) {
 
-        Action action = message.getAction();
 
-        switch (action) {
+            Action action = message.getAction();
+
+            switch (action) {
             /*case IP:
 
                 DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
@@ -166,41 +191,52 @@ public class ReceiveMessage extends AsyncTask<Object, Void, Message> {
 
                 break;*/
 
-            case CONNECT:
+                case CONNECT:
 
-                DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
-                        .findFragmentById(R.id.frag_list);
+                    DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
+                            .findFragmentById(R.id.frag_list);
 
-                Log.d(MainActivity.TAG, "Entro1");
-                if (fragmentList != null) {
-                    Log.d(MainActivity.TAG, "Entro2");
-                    for (Device d : fragmentList.getDevices()) {
-                        if (d.getDevice().deviceAddress.equals(message.getAddress())) {
-                            d.setIp(message.toString());
-                            Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+                    Log.d(MainActivity.TAG, "Entro1");
+                    if (fragmentList != null) {
+                        Log.d(MainActivity.TAG, "Entro2");
+                        for (Device d : fragmentList.getDevices()) {
+                            if (d.getDevice().deviceAddress.equals(message.getAddress())) {
+                                d.setIp(message.toString());
+                                Toast.makeText(context, message.toString(), Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
-                }
 
-                break;
+                    break;
 
-            case EXEC:
+                case EXEC:
 
-                Toast.makeText(context,"1", Toast.LENGTH_SHORT).show();
+                    DeviceDetailFragment ddf = (DeviceDetailFragment) ((MainActivity) context).getFragmentManager()
+                            .findFragmentById(R.id.frag_detail);
 
-                break;
+                    PoolDevice pooledDevice = new PoolDevice(message.getReceiver().deviceAddress, message.getReceiver().deviceName, message.getReceiver().getStatus(), message.getReceiver().getIp());
 
-            case RESUL:
+                    WifiP2pDevice p2p = new WifiP2pDevice();
+                    p2p.deviceAddress = message.getReceiver().deviceAddress;
+                    p2p.deviceName = message.getReceiver().deviceName;
+                    Device d = new Device(p2p, null, message.getReceiver().getIp());
 
-                //anadir al pool
+                    new SendMessage(context, Action.RESUL, d, null, null).execute(ddf.info.groupOwnerAddress.toString().substring(1, ddf.info.groupOwnerAddress.toString().length()));
+
+                    Toast.makeText(context, "1", Toast.LENGTH_SHORT).show();
+
+                    break;
+
+                case RESUL:
+
+                    //anadir al pool
 
 
+                    break;
 
-
-                break;
+            }
 
         }
-
     }
 
 }

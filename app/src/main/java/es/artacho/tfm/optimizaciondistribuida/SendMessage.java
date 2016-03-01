@@ -16,6 +16,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import es.artacho.tfm.optimizaciondistribuida.ga.Individual;
+
 /**
  * A simple socket that connects to a Server and send some Action
  * to slave
@@ -25,21 +27,22 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
     private Action action; // Message in FSM to send
     private WifiP2pDevice senderDevice; // Information of sender device
     private Device receiverDevice; // Information of receiver device
-
+    private Individual individual;
     private DeviceListFragment fragmentList = null; // view to notify data changed
 
     // Default constructor
-    public SendMessage(Context context, Action action, Device receiverDevice, WifiP2pDevice senderDevice) {
+    public SendMessage(Context context, Action action, Device receiverDevice, WifiP2pDevice senderDevice, Individual individual) {
         this.context = context;
         this.action = action;
         this.receiverDevice = receiverDevice;
         this.senderDevice = senderDevice;
+        this.individual = individual;
 
         this.fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
                 .findFragmentById(R.id.frag_list);
 
         if (fragmentList != null){
-             this.senderDevice = fragmentList.getDevice();
+            this.senderDevice = fragmentList.getDevice();
         }
     }
 
@@ -52,7 +55,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
             Socket client; // Socket for connection
             Message message = null; // Message to send
             String address = null; // MAC address of sender device
-
+            PoolDevice pooledDevice;
             ObjectOutputStream outputStream; // OutputStream to write data
             ObjectInputStream inputStream; // InputStream to read data
 
@@ -129,14 +132,22 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     Log.d(MainActivity.TAG, "Connecting to server socket to send EXEC message");
                     client = new Socket();
 
-                    Device d = ((MainActivity)context).pool.peek();
-                    if (d != null) {
+
+                    if (receiverDevice != null) {
                         //client.connect((new InetSocketAddress(connectIP, Constants.SERVER_SLAVE_PORT)), 8888);
-                        client.connect((new InetSocketAddress(d.getIp(), Constants.SERVER_SLAVE_PORT)), 8888);
+                        client.connect((new InetSocketAddress(receiverDevice.getIp(), Constants.SERVER_SLAVE_PORT)), 8888);
                         outputStream = new ObjectOutputStream(client.getOutputStream());
                         message = new Message(client.getLocalAddress().getHostAddress().toString());
+                        message.setIndividual(null);
+                        //message.setAddress();
                         message.setAction(Action.EXEC);
                         message.setFlag(false);
+
+                        pooledDevice = new PoolDevice(receiverDevice.getDevice().deviceAddress, receiverDevice.getDevice().deviceName, receiverDevice.getStatus(), receiverDevice.getIp());
+
+                        message.setReceiver(pooledDevice);
+
+
                         outputStream.writeObject(message);
                     } else {
                         client.connect((new InetSocketAddress("", Constants.SERVER_SLAVE_PORT)), 8888);
@@ -148,11 +159,6 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
 
                     }
 
-
-
-
-
-
                     outputStream.close();
                     client.close();
 
@@ -162,7 +168,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                 // Modificar
                 case RESUL:
 
-                    Log.d(MainActivity.TAG, "Connecting to server socket to send ADD message");
+                    Log.d(MainActivity.TAG, "Connecting to server socket to send RESUL message");
 
                     client = new Socket();
                     client.connect((new InetSocketAddress(connectIP, Constants.SERVER_MASTER_PORT)), Constants.CONNECTION_TIMEOUT);
@@ -173,19 +179,22 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     dataMessage.setAction(Action.RESUL);
                     dataMessage.setMessage(slaveIP);
                     dataMessage.setAddress(senderDevice.deviceAddress);
+                    dataMessage.setIndividual(individual);
+                    pooledDevice = new PoolDevice(receiverDevice.getDevice().deviceAddress, receiverDevice.getDevice().deviceName, receiverDevice.getStatus(), receiverDevice.getIp());
+                    dataMessage.setReceiver(pooledDevice);
                     //dataMessage.set(1);
 
                     // Create stream and write object
                     outputStream = new ObjectOutputStream(client.getOutputStream());
                     outputStream.writeObject(dataMessage);
 
-                    inputStream = new ObjectInputStream(client.getInputStream());
-                    message = (Message) inputStream.readObject();
+                    /*inputStream = new ObjectInputStream(client.getInputStream());
+                    message = (Message) inputStream.readObject();*/
                     Log.d(MainActivity.TAG, "RESUL finalizado");
 
                     // Close resources
                     outputStream.close();
-                    inputStream.close();
+                    //inputStream.close();
                     client.close();
 
                     Log.d(MainActivity.TAG, "SLAVE >> FINISHED RESUL MESSAGE - " + slaveIP);
@@ -280,7 +289,7 @@ public class SendMessage extends AsyncTask<String, Void, Message> {
                     //Modificar status del device en cuestion
 
                     //DeviceListFragment fragmentList = (DeviceListFragment) ((MainActivity) context).getFragmentManager()
-                           // .findFragmentById(R.id.frag_list);
+                    // .findFragmentById(R.id.frag_list);
 
                     if (fragmentList != null) {
                         ((DeviceListFragment.WiFiPeerListAdapter) fragmentList.getListAdapter()).notifyDataSetChanged();

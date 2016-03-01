@@ -20,6 +20,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
 
 /**
@@ -49,7 +51,7 @@ public class MainActivity extends Activity implements ChannelListener, DeviceAct
     public Servidor masterServer = null;
 
     // Pool of executors' devices
-    public ConcurrentLinkedQueue<Device> pool = null;
+    public LinkedBlockingQueue<Device> pool = null;
 
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set

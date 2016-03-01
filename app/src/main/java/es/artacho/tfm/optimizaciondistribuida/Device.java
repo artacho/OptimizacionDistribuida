@@ -2,10 +2,12 @@ package es.artacho.tfm.optimizaciondistribuida;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 
+import java.io.Serializable;
+
 /**
  * Created by Pablo on 12/17/2015.
  */
-public class Device {
+public class Device implements Serializable {
     private WifiP2pDevice device;
     private Status status;
     private String ip;

@@ -14,7 +14,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import es.artacho.tfm.optimizaciondistribuida.DeviceListFragment.DeviceActionListener;
+import es.artacho.tfm.optimizaciondistribuida.ga.Exe;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A fragment that manages a particular peer and allows interaction with device
@@ -65,7 +68,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        new SendMessage(getActivity(), Action.DISCONNECT, myDevice, myDevice.getDevice()).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
+                        new SendMessage(getActivity(), Action.DISCONNECT, myDevice, myDevice.getDevice(),null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
                         //((DeviceActionListener) getActivity()).disconnect();
                     }
                 });
@@ -89,7 +92,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 
                         //new Protocol(getActivity(), Action.ADD, myDevice, null, 0, null).execute(myDevice.getIp());
                         Log.d(MainActivity.TAG, "ADD");
-                        new SendMessage(getActivity(), Action.ADD, myDevice, null).execute(myDevice.getIp());
+                        new SendMessage(getActivity(), Action.ADD, myDevice, null,null).execute(myDevice.getIp());
                     }
                 });
         // Execute
@@ -98,8 +101,8 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                     @Override
                     public void onClick(View v) {
                         Log.d(MainActivity.TAG, "EXEC");
-                        new SendMessage(getActivity(), Action.EXEC, myDevice,null)
-                                .execute(myDevice.getIp());
+                        //new SendMessage(getActivity(), Action.EXEC, myDevice,null,null).execute(myDevice.getIp());
+                        new Exe(((MainActivity)getActivity()).pool,getActivity()).start();
                     }
                 });
         return mContentView;
@@ -131,7 +134,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 ((MainActivity) getActivity()).masterServer = new Servidor(Constants.SERVER_MASTER_PORT, getActivity());
                 ((MainActivity) getActivity()).masterServer.createServer();
                 ((MainActivity) getActivity()).masterServer.start();
-                ((MainActivity) getActivity()).pool = new ConcurrentLinkedQueue<>();
+                ((MainActivity) getActivity()).pool = new LinkedBlockingQueue<>();
             }
             //mContentView.findViewById(R.id.btn_add_slave).setVisibility(View.VISIBLE);
         } else if (info.groupFormed) {
@@ -139,7 +142,9 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             //Log.d(MainActivity.TAG, "ESCLAVOOOOOO");
             //Log.d(MainActivity.TAG, device.deviceAddress);
 
-            new SendMessage(getActivity(), Action.CONNECT, myDevice, device).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
+
+
+            new SendMessage(getActivity(), Action.CONNECT, myDevice, device,null).execute(info.groupOwnerAddress.toString().substring(1, info.groupOwnerAddress.toString().length()));
 
             /*mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
             ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
